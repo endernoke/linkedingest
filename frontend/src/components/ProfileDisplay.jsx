@@ -4,19 +4,15 @@ function ProfileDisplay({ profile }) {
   const formattedData = JSON.stringify(profile, null, 2);
 
   return (
-    <div className="profile-container">
-      <textarea
-        value={formattedData}
-        className="profile-data"
-        rows={20}
-        style={{
-          width: '100%',
-          maxWidth: '600px',
-          fontFamily: 'monospace',
-          padding: '1rem',
-          marginTop: '1rem'
-        }}
-      />
+    <div className="profile-container max-w-4xl mx-auto">
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Data</h2>
+        <textarea
+          value={formattedData}
+          readOnly
+          className="w-full h-[600px] font-mono text-sm bg-gray-50 p-4 rounded-md border border-gray-200 focus:border-linkedin-blue focus:ring-linkedin-blue"
+        />
+      </div>
     </div>
   );
 }
