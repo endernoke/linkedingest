@@ -28,6 +28,11 @@ async def profile_page(profile_id: str):
     # Serve the same index.html - frontend will handle routing
     return FileResponse("../frontend/dist/index.html")
 
+# Get favicon
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("../frontend/dist/favicon.ico")
+
 linkedin_agent = LinkedInAgent()
 
 @app.get("/api/profile/{profile_id}", response_model=ProfileResponse)
