@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ProfileDisplay from './ProfileDisplay';
 
 function ProfilePage() {
-  const { userId } = useParams();
+  const location = useLocation();
   const [profileData, setProfileData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Extract clean profile ID from path
+  const profileId = location.pathname
+    .split('/in/')[1]  // Get everything after /in/
+    .split('/')[0];    // Get first segment before any trailing slash
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/profile/${userId}`);
+        const response = await axios.get(`/api/profile/${profileId}`);
         setProfileData(response.data);
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -23,10 +28,10 @@ function ProfilePage() {
       }
     };
 
-    if (userId) {
+    if (profileId) {
       fetchProfile();
     }
-  }, [userId]);
+  }, [profileId]);
 
   if (loading) {
     return (

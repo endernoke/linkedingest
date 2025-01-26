@@ -26,7 +26,7 @@ function App() {
           <SearchForm />
           <Routes>
             <Route path="/" element={<Welcome />} />
-            <Route path="/in/:userId" element={<ProfilePage />} />
+            <Route path="/in/*" element={<ProfilePage />} />
           </Routes>
         </main>
       </div>

@@ -23,9 +23,10 @@ app.mount("/assets", StaticFiles(directory="../frontend/dist/assets"), name="ass
 async def read_root():
     return FileResponse("../frontend/dist/index.html")
 
-@app.get("/in/{profile_id}")
+@app.get("/in/{profile_id:path}")
 async def profile_page(profile_id: str):
-    # Serve the same index.html - frontend will handle routing
+    # Remove trailing slashes and anything after them
+    clean_id = profile_id.split('/')[0]
     return FileResponse("../frontend/dist/index.html")
 
 # Get favicon
