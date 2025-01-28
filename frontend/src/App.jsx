@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SearchForm from './components/SearchForm';
 import ProfilePage from './components/ProfilePage';
 import Welcome from './components/Welcome';
+import Footer from './components/Footer';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/in/*" element={<ProfilePage />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );
