@@ -3,8 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .api.linkedin import LinkedInAgent
-from .models.profile import ProfileResponse
 from .api.linkedin import ChallengeException
+from .models.profile import ProfileResponse
+from .db.database import init_db
 import os
 
 app = FastAPI()
@@ -39,6 +40,8 @@ async def profile_page(profile_id: str):
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse(os.path.join(root_dir, "frontend/dist/favicon.ico"))
+
+init_db()
 
 try:
     linkedin_agent = LinkedInAgent()

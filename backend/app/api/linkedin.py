@@ -1,7 +1,7 @@
-import linkedin_api.utils
 from ..models.profile import ProfileResponse
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
+from ..db.crud import store_cookies, get_cookies
 import dotenv
 import os
 from datetime import datetime
@@ -30,7 +30,16 @@ class LinkedInAgent:
         
         if credentials["username"] and credentials["password"]:
             try:
-                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True)
+                # Get session cookies
+                cookies = get_cookies(credentials["username"])
+                cookie_path = os.path.join(os.path.dirname(__file__), f"{credentials["username"]}.jr")
+                cookie_dir = os.path.dirname(cookie_path)
+                if not cookie_dir.endswith("/"):
+                    cookie_dir += "/"
+                with open(cookie_path, "wb") as f:
+                    f.write(cookies["cookie_data"])
+                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True, cookies_dir=cookie_dir)
+                os.remove(cookie_path)
             except ChallengeException as e:
                 self.linkedin = None
                 raise e
