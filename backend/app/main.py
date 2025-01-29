@@ -4,8 +4,13 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .api.linkedin import LinkedInAgent
 from .models.profile import ProfileResponse
+import os
 
 app = FastAPI()
+
+# root directory relative to the file is ../..
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+print(root_dir)
 
 # CORS middleware
 app.add_middleware(
@@ -17,22 +22,22 @@ app.add_middleware(
 )
 
 # Mount static assets
-app.mount("/assets", StaticFiles(directory="../frontend/dist/assets"), name="assets")
+app.mount("/assets", StaticFiles(directory=os.path.join(root_dir, "frontend/dist/assets")), name="assets")
 
 @app.get("/")
 async def read_root():
-    return FileResponse("../frontend/dist/index.html")
+    return FileResponse(os.path.join(root_dir, "frontend/dist/index.html"))
 
 @app.get("/in/{profile_id:path}")
 async def profile_page(profile_id: str):
     # Remove trailing slashes and anything after them
     clean_id = profile_id.split('/')[0]
-    return FileResponse("../frontend/dist/index.html")
+    return FileResponse(os.path.join(root_dir, "frontend/dist/index.html"))
 
 # Get favicon
 @app.get("/favicon.ico")
 async def favicon():
-    return FileResponse("../frontend/dist/favicon.ico")
+    return FileResponse(os.path.join(root_dir, "frontend/dist/favicon.ico"))
 
 linkedin_agent = LinkedInAgent()
 
