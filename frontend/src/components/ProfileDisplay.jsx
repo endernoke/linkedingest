@@ -138,7 +138,6 @@ function ProfileDisplay({ profile }) {
         <textarea
           ref={textareaRef}
           value={getFullProfileText()}
-          readOnly
           className="w-full h-[600px] font-mono text-sm bg-gray-50 p-4 rounded-md border border-gray-200 focus:border-linkedin-blue focus:ring-linkedin-blue"
         />
       </div>
