@@ -1,5 +1,7 @@
+import linkedin_api.utils
 from ..models.profile import ProfileResponse
 from linkedin_api import Linkedin
+from linkedin_api.client import ChallengeException
 import dotenv
 import os
 from datetime import datetime
@@ -26,13 +28,19 @@ class LinkedInAgent:
             "password": os.getenv("LINKEDIN_AGENT_PASSWORD"),
         }
         
-        if credentials:
-            self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True)
+        if credentials["username"] and credentials["password"]:
+            try:
+                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True)
+            except ChallengeException as e:
+                self.linkedin = None
+                raise e
         else:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")
     
     def get_profile(self, public_id: str):
+        if self.linkedin is None:
+            raise Exception("Could not perform LinkedIn API calls. Please contact the maintainer if this issue persists.")
         data = self.linkedin.get_profile(public_id)
         if data:
             return data

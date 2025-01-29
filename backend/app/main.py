@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .api.linkedin import LinkedInAgent
 from .models.profile import ProfileResponse
+from .api.linkedin import ChallengeException
 import os
 
 app = FastAPI()
@@ -39,11 +40,17 @@ async def profile_page(profile_id: str):
 async def favicon():
     return FileResponse(os.path.join(root_dir, "frontend/dist/favicon.ico"))
 
-linkedin_agent = LinkedInAgent()
+try:
+    linkedin_agent = LinkedInAgent()
+except ChallengeException as e:
+    print("LinkedIn login challenge required, you're screwed 💀")
+    linkedin_agent = None
 
 @app.get("/api/profile/{profile_id}", response_model=ProfileResponse)
 async def get_profile(profile_id: str):
     try:
+        if linkedin_agent is None:
+            raise HTTPException(status_code=400, detail="LinkedIn login challenge required, you're screwed 💀 (please contact the maintainer if this issue persists).")
         profile_data = await linkedin_agent.get_ingest(profile_id)
         return profile_data
     except Exception as e:
