@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ProfileDisplay from './ProfileDisplay';
+import NotFound from './NotFound';
 
 function ProfilePage() {
   const location = useLocation();
@@ -21,7 +22,6 @@ function ProfilePage() {
         const response = await axios.get(`/api/profile/${profileId}`);
         setProfileData(response.data);
       } catch (error) {
-        console.error('Error fetching profile:', error);
         setError('Failed to load profile. Please check the ID and try again.');
       } finally {
         setLoading(false);
@@ -42,11 +42,7 @@ function ProfilePage() {
   }
 
   if (error) {
-    return (
-      <div className="max-w-2xl mx-auto mt-8 p-4 bg-red-50 rounded-md border border-red-200">
-        <p className="text-red-700">{error}</p>
-      </div>
-    );
+    return <NotFound requestedUserId={profileId} />;
   }
 
   return <ProfileDisplay profile={profileData} />;

@@ -7,6 +7,7 @@ import ProfilePage from './components/ProfilePage';
 import Welcome from './components/Welcome';
 import Footer from './components/Footer';
 import ServiceStatus from './components/ServiceStatus';
+import NotFound from './components/NotFound';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Welcome />} />
               <Route path="/in/*" element={<ProfilePage />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />
