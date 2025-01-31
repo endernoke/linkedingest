@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ProfileDisplay from './ProfileDisplay';
 import NotFound from './NotFound';
@@ -18,11 +18,14 @@ function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setError(null);
+        setProfileData(null);
         setLoading(true);
         const response = await axios.get(`/api/profile/${profileId}`);
         setProfileData(response.data);
       } catch (error) {
         setError('Failed to load profile. Please check the ID and try again.');
+        setProfileData(null);
       } finally {
         setLoading(false);
       }
@@ -31,6 +34,13 @@ function ProfilePage() {
     if (profileId) {
       fetchProfile();
     }
+
+    // Cleanup function
+    return () => {
+      setError(null);
+      setProfileData(null);
+      setLoading(false);
+    };
   }, [profileId]);
 
   if (loading) {
@@ -45,7 +55,7 @@ function ProfilePage() {
     return <NotFound requestedUserId={profileId} />;
   }
 
-  return <ProfileDisplay profile={profileData} />;
+  return profileData ? <ProfileDisplay profile={profileData} /> : null;
 }
 
 export default ProfilePage;
