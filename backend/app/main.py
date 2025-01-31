@@ -56,6 +56,15 @@ async def get_profile(profile_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.get("/api/health")
+async def health_check():
+    if linkedin_agent is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="LinkedIn login challenge required."
+        )
+    return {"status": "ok"}
+
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
     # Handle 404 for undefined routes

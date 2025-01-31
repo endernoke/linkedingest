@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBackend } from '../context/BackendContext';
 import { isValidLinkedInId } from '../utils/validation';
 
 function SearchForm() {
   const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { isBackendHealthy } = useBackend();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +45,7 @@ function SearchForm() {
               ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
                      : 'border-gray-300 focus:ring-linkedin-blue focus:border-linkedin-blue'}`}
             required
+            disabled={!isBackendHealthy}
           />
         </div>
         <div className="sm:self-end">
@@ -51,7 +54,9 @@ function SearchForm() {
             className="inline-flex justify-center px-6 py-2 border border-transparent shadow-sm 
               text-base font-medium rounded-md text-white bg-linkedin-blue 
               hover:bg-linkedin-darker focus:outline-none focus:ring-2 
-              focus:ring-offset-2 focus:ring-linkedin-blue transition-colors sm:mt-6"
+              focus:ring-offset-2 focus:ring-linkedin-blue transition-colors sm:mt-6
+              disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isBackendHealthy}
           >
             Get Profile
           </button>
