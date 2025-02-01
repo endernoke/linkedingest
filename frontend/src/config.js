@@ -31,7 +31,7 @@ export const config = {
       profile: '/profile'
     }
   },
-  exampleProfiles: ["garyvaynerchuk", "gretchenrubin", "neil123", "melindagates", "john-smith-5065b4349"]
+  exampleProfiles: ["jeffweiner08", "gretchenrubin", "neil123", "melindagates", "sam-altman", "john-smith-5065b4349"]
 };
 
 export default config;

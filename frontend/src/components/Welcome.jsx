@@ -1,7 +1,14 @@
 import React from 'react';
-import config from '../config'
+import { useNavigate } from 'react-router-dom';
+import config from '../config';
 
 function Welcome() {
+  const navigate = useNavigate();
+
+  const handleExampleClick = (profileId) => {
+    navigate(`/in/${profileId}`);
+  };
+
   return (
     <div className="max-w-4xl mx-auto mb-12">
       <div className="bg-white rounded-lg shadow-sm p-8">
@@ -58,6 +65,24 @@ function Welcome() {
                 {config.app.baseUrl+'/in/john-doe-123'}
               </code>
             </p>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className={`text-lg font-medium text-${config.theme.colors.textDark} mb-4`}>
+              Try these example profiles:
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {config.exampleProfiles.map(profileId => (
+                <button
+                  key={profileId}
+                  onClick={() => handleExampleClick(profileId)}
+                  className="px-4 py-2 rounded-full border border-linkedin-blue text-linkedin-blue 
+                    hover:bg-linkedin-blue hover:text-white transition-colors duration-200"
+                >
+                  {profileId}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
