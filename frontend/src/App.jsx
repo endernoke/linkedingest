@@ -22,7 +22,7 @@ function App() {
           <header className="bg-white shadow-sm relative">
             <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
               <a href="/">
-                <h1 className={`text-3xl font-bold text-${config.theme.colors.primary} hover:text-${config.theme.colors.primaryDark}`}>
+                <h1 className={`text-3xl font-bold text-${config.theme.colors.primary} hover:text-${config.theme.colors.primaryDark} transition-colors duration-200`}>
                   {config.app.name}
                 </h1>
               </a>
