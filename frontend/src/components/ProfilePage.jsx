@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ProfileDisplay from './ProfileDisplay';
 import NotFound from './NotFound';
+import config from '../config';
 
 function ProfilePage() {
   const location = useLocation();
@@ -21,7 +22,7 @@ function ProfilePage() {
         setError(null);
         setProfileData(null);
         setLoading(true);
-        const response = await axios.get(`/api/profile/${profileId}`);
+        const response = await axios.get(`${config.api.baseUrl+config.api.endpoints.profile}/${profileId}`);
         setProfileData(response.data);
       } catch (error) {
         setError('Failed to load profile. Please check the ID and try again.');
