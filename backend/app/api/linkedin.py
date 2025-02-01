@@ -6,6 +6,11 @@ import dotenv
 import os
 from datetime import datetime
 
+class FetchException(Exception):
+    pass
+class ParseException(Exception):
+    pass
+
 def is_ongoing(experience: dict) -> bool:
     if experience.get("timePeriod", False) == False:
         return True
@@ -48,9 +53,14 @@ class LinkedInAgent:
             raise Exception("LinkedIn profile not found")
     
     async def get_ingest(self, public_id: str) -> ProfileResponse:
+        raw_data = None
         try:
             raw_data = self.get_profile(public_id)
             print("Got raw data.")
+        except Exception as e:
+            raise FetchException()
+        
+        try:
             profile_data = {}
             profile_data["full_name"] = raw_data["firstName"] + " "
             if raw_data.get("middleName", False):
@@ -269,4 +279,4 @@ class LinkedInAgent:
             return ProfileResponse(**profile_data)
         except Exception as e:
             print(e)
-            raise Exception(f"Error fetching LinkedIn profile: {str(e)}")
+            raise ParseException(f"Error fetching LinkedIn profile: {str(e)}")
