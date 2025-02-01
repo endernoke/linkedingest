@@ -1,4 +1,5 @@
 import React from 'react';
+import config from '../config';
 
 function Footer() {
   return (
@@ -7,32 +8,32 @@ function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex gap-4">
             <a 
-              href="https://github.com/endernoke/linkedingest/issues/new?template=feature_request.md"
+              href={config.app.github.issues.feature}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-linkedin-blue transition-colors"
+              className={`text-${config.theme.colors.text} hover:text-${config.theme.colors.primary} transition-colors`}
             >
               Request a feature
             </a>
             <span className="text-gray-300">|</span>
             <a 
-              href="https://github.com/endernoke/linkedingest/issues/new?template=bug_report.md"
+              href={config.app.github.issues.bug}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-linkedin-blue transition-colors"
+              className={`text-${config.theme.colors.text} hover:text-${config.theme.colors.primary} transition-colors`}
             >
               Report a bug
             </a>
           </div>
-          <div className="text-gray-600">
+          <div className={`text-${config.theme.colors.text}`}>
             Made with <span role="img" aria-label="saluting face">🫡</span> by{' '}
             <a 
-              href="https://www.linkedin.com/in/james-zheng-zi"
+              href={config.author.profile}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-linkedin-blue hover:text-linkedin-darker transition-colors"
+              className={`text-${config.theme.colors.primary} hover:text-${config.theme.colors.primaryDark} transition-colors`}
             >
-              @endernoke
+              {config.author.name}
             </a>
           </div>
         </div>

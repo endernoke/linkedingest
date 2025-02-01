@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import config from '../config';
 
 const BackendContext = createContext();
 
@@ -10,7 +11,7 @@ export function BackendProvider({ children }) {
   useEffect(() => {
     const checkBackendHealth = async () => {
       try {
-        await axios.get('/api/health');
+        await axios.get(config.api.baseUrl+config.api.endpoints.health);
         setIsBackendHealthy(true);
         setError(null);
       } catch (err) {
