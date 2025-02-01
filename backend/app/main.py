@@ -67,5 +67,5 @@ async def health_check():
 
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
-    # Handle 404 for undefined routes
-    raise HTTPException(status_code=404, detail="Resource not found")
+    # 404 will be handled in frontend
+    return FileResponse(os.path.join(root_dir, "frontend/dist/index.html"))
