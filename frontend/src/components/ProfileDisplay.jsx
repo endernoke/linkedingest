@@ -12,7 +12,8 @@ function ProfileDisplay({ profile }) {
     volunteer: true,
     publications: true,
     skills: true,
-    languages: true
+    languages: true,
+    posts: true
   });
 
   // Refs for section scrolling
