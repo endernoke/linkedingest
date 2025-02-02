@@ -12,3 +12,4 @@ class ProfileResponse(BaseModel):
     volunteer: str
     skills: str
     languages: str
+    posts: str
