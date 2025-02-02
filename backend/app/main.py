@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from .api.linkedin import LinkedInAgent
+from .api.linkedin import LinkedInAgent, FetchException, ParseException
 from .models.profile import ProfileResponse
 from .api.linkedin import ChallengeException
 import os
@@ -53,8 +53,10 @@ async def get_profile(profile_id: str):
             raise HTTPException(status_code=400, detail="LinkedIn login challenge required, you're screwed 💀 (please contact the maintainer if this issue persists).")
         profile_data = await linkedin_agent.get_ingest(profile_id)
         return profile_data
+    except FetchException:
+        raise HTTPException(status_code=400, detail="Failed to fetch profile")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
 async def health_check():
