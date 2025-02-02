@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from .api.linkedin import LinkedInAgent
+from .api.linkedin import LinkedInAgent, FetchException, ParseException
 from .api.linkedin import ChallengeException
 from .models.profile import ProfileResponse
 from .db.database import init_db
@@ -56,10 +56,21 @@ async def get_profile(profile_id: str):
             raise HTTPException(status_code=400, detail="LinkedIn login challenge required, you're screwed 💀 (please contact the maintainer if this issue persists).")
         profile_data = await linkedin_agent.get_ingest(profile_id)
         return profile_data
+    except FetchException:
+        raise HTTPException(status_code=400, detail="Failed to fetch profile")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/health")
+async def health_check():
+    if linkedin_agent is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="LinkedIn login challenge required."
+        )
+    return {"status": "ok"}
 
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
-    # Handle 404 for undefined routes
-    raise HTTPException(status_code=404, detail="Resource not found")
+    # 404 will be handled in frontend
+    return FileResponse(os.path.join(root_dir, "frontend/dist/index.html"))
