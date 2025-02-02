@@ -1,4 +1,3 @@
-import linkedin_api.utils
 from ..models.profile import ProfileResponse
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
@@ -24,6 +23,36 @@ def is_ongoing(experience: dict) -> bool:
     else:
         return True
 
+def format_date(date: dict, precision: str = "day") -> str:
+    """
+    Formats a date object from LinkedIn API into a string in yyyy-mm-dd format.
+    "year" is a required field in the date object.
+    "month" and "day" are optional fields, they are omitted if not provided (i.e. yyyy-mm or yyyy).
+    """
+    year = date["year"]
+    month = date.get("month", None)
+    day = date.get("day", None)
+    if precision == "year":
+        return f"{year}"
+    elif precision == "month":
+        return f"{year}-{month:02d}" if month else f"{year}"
+    elif precision == "day":
+        return f"{year}-{month:02d}-{day:02d}" if month and day else f"{year}-{month:02d}" if month else f"{year}"
+    else:
+        raise ValueError("Invalid precision value. Must be 'year', 'month', or 'day'.")
+
+def format_duration(timePeriod: dict, startPropName: str = "startDate", endPropName: str = "endDate", prefix: str = "DURATION: ", suffix: str = "\n") -> str:
+    """
+    Formats a timePeriod object from LinkedIn API into a string in the format "DURATION: yyyy-mm to yyyy-mm" or "DURATION: yyyy-mm to Present".
+    """
+    start_date = timePeriod.get(startPropName, None)
+    end_date = timePeriod.get(endPropName, None)
+    # call format_date
+    start_str = format_date(start_date, "month") if start_date else "Unknown"
+    end_str = format_date(end_date, "month") if end_date else "Present"
+    return f"{prefix}{start_str} to {end_str}{suffix}"
+
+
 class LinkedInAgent:
     def __init__(self):
         # get env variables of linkedin credentials
@@ -45,7 +74,7 @@ class LinkedInAgent:
     
     def get_profile(self, public_id: str):
         if self.linkedin is None:
-            raise Exception("Could not perform LinkedIn API calls. Please contact the maintainer if this issue persists.")
+            raise Exception("LinkedIn agent not initialized")
         data = self.linkedin.get_profile(public_id)
         if data:
             return data
@@ -90,14 +119,7 @@ class LinkedInAgent:
                         profile_data["experience"] += f" at {experience['companyName']}"
                     profile_data["experience"] += "\n"
                     if experience.get("timePeriod", False):
-                        start_date = experience["timePeriod"]["startDate"] # Must be present
-                        start_year = start_date["year"]
-                        start_month = start_date.get("month", 1)
-                        end_date = experience["timePeriod"].get("endDate", None)
-                        if end_date:
-                            end_year = end_date["year"]
-                            end_month = end_date.get("month", 12)
-                        profile_data["experience"] += f"DURATION: {start_year}-{start_month:02d} to {f"{end_year}-{end_month:02d}" if end_date is not None else "Present"}\n"
+                        profile_data["experience"] += format_duration(experience["timePeriod"])
                     
                     if experience.get("description", False):
                         profile_data["experience"] += f'DESCRIPTION:\n"""\n{experience["description"]}\n"""\n'
@@ -121,14 +143,7 @@ class LinkedInAgent:
                         profile_data["education"] += f"FIELD OF STUDY: {education['fieldOfStudy']}\n"
                     
                     if education.get("timePeriod", False):
-                        start_date = education["timePeriod"]["startDate"]
-                        start_year = start_date["year"]
-                        start_month = start_date.get("month", 1)
-                        end_date = education["timePeriod"].get("endDate", None)
-                        if end_date:
-                            end_year = end_date["year"]
-                            end_month = end_date.get("month", 12)
-                        profile_data["education"] += f"Duration: {start_year}-{start_month:02d} to {f"{end_year}-{end_month:02d}" if end_date is not None else "Present"}\n"
+                        profile_data["education"] += format_duration(education["timePeriod"])
 
                     if education.get("grade", False):
                         profile_data["education"] += f"GRADE: {education['grade']}\n"
@@ -139,7 +154,7 @@ class LinkedInAgent:
                     
                     profile_data["education"] += "\n"
                 profile_data["education"] = profile_data["education"][:-2]
-
+            
             # Projects
             profile_data["projects"] = ""
             if raw_data.get("projects", False):
@@ -158,15 +173,8 @@ class LinkedInAgent:
                     profile_data["projects"] += "\n"
 
                     if project.get("timePeriod", False):
-                        start_date = project["timePeriod"]["startDate"]
-                        start_year = start_date["year"]
-                        start_month = start_date.get("month", 1)
-                        end_date = project["timePeriod"].get("endDate", None)
-                        if end_date:
-                            end_year = end_date["year"]
-                            end_month = end_date.get("month", 12)
-                        profile_data["projects"] += f"Duration: {start_year}-{start_month:02d} to {f"{end_year}-{end_month:02d}" if end_date is not None else "Present"}\n"
-                        
+                        profile_data["projects"] += format_duration(project["timePeriod"])
+                    
                     if project.get("description", False):
                         profile_data["projects"] += f'DESCRIPTION:\n"""\n{project["description"]}\n"""\n'
                     profile_data["projects"] += "\n"
@@ -181,10 +189,8 @@ class LinkedInAgent:
                     if honor.get("issuer", False):
                         profile_data["honors"] += f"ISSUED BY: {honor['issuer']}\n"
                     if honor.get("issueDate", False):
-                        issue_date = honor["issueDate"]
-                        issue_year = issue_date["year"]
-                        issue_month = issue_date.get("month", 1)
-                        profile_data["honors"] += f"ISSUE DATE: {issue_year}-{issue_month:02d}\n"
+                        profile_data["honors"] += f"ISSUE DATE: {format_date(honor['issueDate'])}\n"
+                    
                     if honor.get("description", False):
                         profile_data["honors"] += f'DESCRIPTION:\n"""\n{honor["description"]}\n"""\n'
                     profile_data["honors"] += "\n"
@@ -202,8 +208,12 @@ class LinkedInAgent:
             if raw_data.get("languages", False):
                 profile_data["languages"] = "# LANGUAGES\n"
                 for language in raw_data["languages"]:
-                    profile_data["languages"] += f"{language['name']}: {language['proficiency']}\n"
-                profile_data["languages"] = profile_data["languages"][:-1]
+                    profile_data["languages"] += language['name']
+                    if language.get("proficiency", False):
+                        profile_data["languages"] += f" ({language['proficiency']})"
+                    profile_data["languages"] += ", "
+                
+                profile_data["languages"] = profile_data["languages"][:-2]
             
             # Certifications
             profile_data["certifications"] = ""
@@ -214,10 +224,7 @@ class LinkedInAgent:
                     if certification.get("authority", False):
                         profile_data["certifications"] += f"ISSUED BY: {certification['authority']}\n"
                     if certification.get("timePeriod", False):
-                        issue_date = certification["timePeriod"]["startDate"]
-                        issue_year = issue_date["year"]
-                        issue_month = issue_date.get("month", 1)
-                        profile_data["certifications"] += f"ISSUE DATE: {issue_year}-{issue_month:02d}\n"
+                        profile_data["certifications"] += f"ISSUE DATE: {format_date(certification["timePeriod"]["startDate"])}\n"
                     if certification.get("description", False):
                         profile_data["certifications"] += f'DESCRIPTION:\n"""\n{certification["description"]}\n"""\n'
                     profile_data["certifications"] += "\n"
@@ -231,14 +238,10 @@ class LinkedInAgent:
                     profile_data["publications"] += f"TITLE: {publication['name']}\n"
                     if publication.get("authors", False):
                         num_authors = len(publication.get("authors", [True]))
-                        profile_data["publications"] += f"AUTHOR(S): {profile_data['full_name']}{f' and {num_authors - 1} other(s)' if num_authors > 1 else ''}\n"
-
+                        profile_data["publications"] += f"AUTHORS: {profile_data['full_name']}{f' and {num_authors - 1} other(s)' if num_authors > 1 else ''}\n"
+                    
                     if publication.get("date", False):
-                        publication_date = publication["date"]
-                        publication_year = publication_date["year"]
-                        publication_month = publication_date.get("month", None)
-                        publication_day = publication_date.get("day", None)
-                        profile_data["publications"] += f"PUBLICATION DATE: {publication_year}{f"-{publication_month:02d}" if publication_month else ""}{f"-{publication_day:02d}" if publication_day else ""}\n"
+                        profile_data["publications"] += f"PUBLICATION DATE: {format_date(publication['date'])}\n"
                     if publication.get("description", False):
                         profile_data["publications"] += f'DESCRIPTION:\n"""\n{publication["description"]}\n"""\n'
                     profile_data["publications"] += "\n"
@@ -257,17 +260,8 @@ class LinkedInAgent:
                     profile_data["volunteer"] += f"{volunteer['role']} at {volunteer['companyName']}\n"
                     if volunteer.get("cause", False):
                         profile_data["volunteer"] += f"CAUSE: {volunteer['cause']}\n"
-                    
                     if volunteer.get("timePeriod", False):
-                        start_date = volunteer["timePeriod"]["startDate"]
-                        start_year = start_date["year"]
-                        start_month = start_date.get("month", 1)
-                        end_date = volunteer["timePeriod"].get("endDate", None)
-                        if end_date:
-                            end_year = end_date["year"]
-                            end_month = end_date.get("month", 12)
-                        profile_data["volunteer"] += f"Duration: {start_year}-{start_month:02d} to {f"{end_year}-{end_month:02d}" if end_date is not None else "Present"}\n"
-
+                        profile_data["volunteer"] += format_duration(volunteer["timePeriod"])
                     if volunteer.get("description", False):
                         profile_data["volunteer"] += f'DESCRIPTION:\n"""\n{volunteer["description"]}\n"""\n'
                     profile_data["volunteer"] += "\n"
@@ -279,4 +273,4 @@ class LinkedInAgent:
             return ProfileResponse(**profile_data)
         except Exception as e:
             print(e)
-            raise ParseException(f"Error fetching LinkedIn profile: {str(e)}")
+            raise ParseException(f"Error while processing LinkedIn profile: {str(e)}")
