@@ -1,10 +1,18 @@
 from ..models.profile import ProfileResponse
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
+from linkedin_api.cookie_repository import LinkedinSessionExpired
 from ..db.crud import store_cookies, get_cookies
 import dotenv
 import os
+import pickle
 from datetime import datetime
+
+def remove_file_silently(file_path: str):
+    try:
+        os.remove(file_path)
+    except OSError:
+        pass
 
 class FetchException(Exception):
     pass
@@ -67,6 +75,7 @@ class LinkedInAgent:
             try:
                 # Get session cookies
                 cookies = get_cookies(credentials["username"])
+                print("Got cookies from database")
                 cookie_path = os.path.join(os.path.dirname(__file__), f"{credentials["username"]}.jr")
                 cookie_dir = os.path.dirname(cookie_path)
                 if not cookie_dir.endswith("/"):
@@ -74,10 +83,20 @@ class LinkedInAgent:
                 with open(cookie_path, "wb") as f:
                     f.write(cookies["cookie_data"])
                 self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True, cookies_dir=cookie_dir)
-                os.remove(cookie_path)
+            except LinkedinSessionExpired:
+                # Authenticate with username and password and send the new cookies to database
+                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True, refresh_cookies=True, cookies_dir=cookie_dir)
+                cookie_data = pickle.dumps(self.linkedin.client.session.cookies)
+                store_cookies(credentials["username"], cookie_data)
+                print("Got new cookies and stored them in database")
             except ChallengeException as e:
                 self.linkedin = None
                 raise e
+            except Exception as e:
+                self.linkedin = None
+                raise e
+            finally:
+                remove_file_silently(cookie_path)
         else:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")

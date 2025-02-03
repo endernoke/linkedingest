@@ -48,6 +48,9 @@ try:
 except ChallengeException as e:
     print("LinkedIn login challenge required, you're screwed 💀")
     linkedin_agent = None
+except Exception as e:
+    print(f"Failed to initialize LinkedInAgent: {e}")
+    linkedin_agent = None
 
 @app.get("/api/profile/{profile_id}", response_model=ProfileResponse)
 async def get_profile(profile_id: str):
