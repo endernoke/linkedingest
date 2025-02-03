@@ -44,10 +44,10 @@ To get a local copy up and running, follow these steps:
 
 ### Prerequisites
 
-* Python 3.8+
-* Node.js 18+
-* PostgreSQL database
+* Python
+* npm
 * A valid LinkedIn account (don't use your own if possible)
+
 ### Installation
 
 1. Clone the repo
@@ -58,9 +58,14 @@ To get a local copy up and running, follow these steps:
 
 2. Create a `.env` file in the project's root directory and add the following environment variables:
    ```env
+   # This LinkedIn account will be making all the API calls when fetching user data.
+   # Don't use your own account if possible, as you might get restricted/banned by LinkedIn.
    LINKEDIN_AGENT_USERNAME=your_linkedin_email
    LINKEDIN_AGENT_PASSWORD=your_linkedin_password
-   DB_URL=your_postgres_connection_string
+   
+   # (optional) project name and description
+   VITE_APP_NAME=LinkedIngest
+   VITE_APP_DESCRIPTION=Transform LinkedIn profiles into prompt-ready data
    ```
 
 3. Install dependencies and build
@@ -83,12 +88,12 @@ To get a local copy up and running, follow these steps:
    sh ./scripts/start.sh
    ```
 
-5. The app will be running on `http:// 0.0.0.0:10000`. Navigate to this link in your browser.
+5. The app will be running on `http:// 0.0.0.0:10000`. Navigate to this link in your browser to use the webapp.
 
 ## Usage
 
 There are two ways to access someone's profile ingest:
-- **Direct URL Access**: Replace `linkedin.com` with `linkedingest.onrender.com` in any LinkedIn profile URL:
+- **Direct URL Access**: Replace `linkedin.com` with `linkedingest.onrender.com` (or whatever URL you hosted it on) in any LinkedIn profile URL:
    ```
    https://linkedin.com/in/john-doe-123 → https://linkedingest.onrender.com/in/john-doe-123
    ```
