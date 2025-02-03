@@ -7,6 +7,9 @@ import dotenv
 import os
 import pickle
 from datetime import datetime
+import random
+import asyncio
+from typing import Optional, List, Dict, Any
 
 def remove_file_silently(file_path: str):
     try:
@@ -63,6 +66,10 @@ def format_duration(timePeriod: dict, startPropName: str = "startDate", endPropN
 
 
 class LinkedInAgent:
+    MIN_DELAY = 5  # Minimum delay in seconds
+    MAX_DELAY = 15  # Maximum delay in seconds
+    NOISE_PROBABILITY = 0.3  # 30% chance to make noise requests
+
     def __init__(self):
         # get env variables of linkedin credentials
         dotenv.load_dotenv()
@@ -101,6 +108,31 @@ class LinkedInAgent:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")
     
+    async def _random_delay(self):
+        """Add random delay between requests"""
+        delay = random.uniform(self.MIN_DELAY, self.MAX_DELAY)
+        await asyncio.sleep(delay)
+
+    async def _make_noise(self) -> None:
+        """
+        Randomly perform noise requests to appear more human-like
+        """
+        if random.random() < self.NOISE_PROBABILITY:
+            noise_funcs = [
+                (self.linkedin.get_current_profile_views, {}),
+                (self.linkedin.get_invitations, {"start": 0, "limit": 3}),
+                (self.linkedin.get_feed_posts, {"limit": 10, "exclude_promoted_posts": True}),
+            ]
+            
+            # Pick 1-2 noise functions randomly
+            selected_funcs = random.sample(noise_funcs, random.randint(1, 2))
+            for func, kwargs in selected_funcs:
+                try:
+                    await self._random_delay()
+                    func(**kwargs)
+                except Exception as e:
+                    print(f"Noise request failed (this is fine): {str(e)}")
+    
     def get_profile(self, public_id: str):
         if self.linkedin is None:
             raise Exception("LinkedIn agent not initialized")
@@ -121,18 +153,21 @@ class LinkedInAgent:
     
     async def get_ingest(self, public_id: str) -> ProfileResponse:
         raw_profile_data = None
+        await self._random_delay()
         try:
             raw_profile_data = self.get_profile(public_id)
             print("Got profile data.")
         except Exception as e:
             raise FetchException("profile")
         
+        await self._make_noise()
         raw_posts_data = None
         try:
             raw_posts_data = self.get_profile_posts(public_id)
             print("Got posts data.")
         except Exception as e:
             raise FetchException("posts")
+        await self._make_noise()
         
         profile_data = {}
         
