@@ -352,10 +352,9 @@ class LinkedInAgent:
             print(e)
             raise ParseException(f"Error while processing LinkedIn profile: {str(e)}")
         
-        # TODO: Add posts and recommendations
+        # Posts
+        profile_data["posts"] = ""
         try:
-            # Posts
-            profile_data["posts"] = ""
             if raw_posts_data:
                 profile_data["posts"] = "# POSTS\n"
                 for post in raw_posts_data:
@@ -371,49 +370,64 @@ class LinkedInAgent:
                     orig_author = None
                     orig_author_name = None
                     orig_author_headline = None
+                    orig_company_name = None
                     if post["actor"]["urn"] != raw_profile_data["member_urn"]:
                         post_type = "repost"
-                        orig_author = post["actor"]["image"]["attributes"][0]["miniProfile"]
-                        orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
-                        orig_author_headline = orig_author.get("occupation", None)
+                        if post["actor"]["image"]["attributes"][0].get("miniProfile", False):
+                            orig_author = post["actor"]["image"]["attributes"][0]["miniProfile"]
+                            orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
+                            orig_author_headline = orig_author.get("occupation", None)
+                        elif post["actor"]["image"]["attributes"][0].get("miniCompany", False):
+                            orig_company_name = post["actor"]["image"]["attributes"][0]["miniCompany"].get("name", None)
                     elif post.get("resharedUpdate", False):
                         post_type = "reshare"
-                        orig_content = post["resharedUpdate"]["commentary"]["text"]["text"]
-                        orig_author = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniProfile"]
-                        orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
-                        orig_author_headline = orig_author.get("occupation", None)
+                        try:
+                            orig_content = post["resharedUpdate"]["commentary"]["text"]["text"]
+                        except KeyError:
+                            orig_content = None
+                        if post["resharedUpdate"]["actor"]["image"]["attributes"][0].get("miniProfile", False):
+                            orig_author = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniProfile"]
+                            orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
+                            orig_author_headline = orig_author.get("occupation", None)
+                        elif post["resharedUpdate"]["actor"]["image"]["attributes"][0].get("miniCompany", False):
+                            orig_company_name = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniCompany"].get("name", None)
                     
                     num_comments = post["socialDetail"]["totalSocialActivityCounts"]["numComments"]
                     num_shares = post["socialDetail"]["totalSocialActivityCounts"]["numShares"]
                     reactions = post["socialDetail"]["totalSocialActivityCounts"]["reactionTypeCounts"]
                     reaction_str = ", ".join([f"{reaction['count']} ({reaction['reactionType']})" for reaction in reactions])
-                    post_content = post["commentary"]["text"]["text"]
+                    post_content = None
+                    try:
+                        post_content = post["commentary"]["text"]["text"]
+                    except KeyError:
+                        post_content = None
                     
+                    attribution_prefix = "COMPANY" if orig_company_name else "AUTHOR"
                     if post_type == "post":
                         profile_data["posts"] += "[Posted]\n"
                     if post_type == "reshare":
                         profile_data["posts"] += "[Reshared a post]\n"
-                        profile_data["posts"] += f"RESHARED FROM:\n- NAME: {orig_author_name}\n"
+                        profile_data["posts"] += f"RESHARED FROM:\n- {attribution_prefix}: {orig_author_name if orig_author_name else orig_company_name}\n"
                         if orig_author_headline:
                             profile_data["posts"] += f"- HEADLINE: {orig_author_headline}\n"
                     if post_type == "repost":
                         profile_data["posts"] += "[Reposted a post]\n"
-                        profile_data["posts"] += f"REPOSTED FROM:\n- NAME: {orig_author_name}\n"
+                        profile_data["posts"] += f"REPOSTED FROM:\n- {attribution_prefix}: {orig_author_name if orig_author_name else orig_company_name}\n"
                         if orig_author_headline:
                             profile_data["posts"] += f"- HEADLINE: {orig_author_headline}\n"
                     profile_data["posts"] += f"REACTIONS: {reaction_str}\n"
                     profile_data["posts"] += f"COMMENTS: {num_comments}\n"
                     profile_data["posts"] += f"SHARES: {num_shares}\n"
-                    if post_type == "reshare":
+                    if post_type == "reshare" and orig_content:
                         profile_data["posts"] += f'ORIGINAL CONTENT:\n"""\n{orig_content}\n"""\n'
                     
-                    content_prefix = "CONTENT:" if post_type == "post" else "ORIGINAL CONTENT:" if post_type == "repost" else "RESHARE COMMENTARY:"
-                    profile_data["posts"] += f'{content_prefix}\n"""\n{post_content}\n"""\n'
+                    if post_content:
+                        content_prefix = "CONTENT:" if post_type == "post" else "ORIGINAL CONTENT:" if post_type == "repost" else "RESHARE COMMENTARY:"
+                        profile_data["posts"] += f'{content_prefix}\n"""\n{post_content}\n"""\n'
                     profile_data["posts"] += "\n"
                 profile_data["posts"] = profile_data["posts"][:-2]
-            
         except Exception as e:
-            print(e)
-            raise ParseException(f"Error while processing LinkedIn posts: {str(e)}")
+            print(f"Failed to process posts: {e}")
+            profile_data["posts"] = "# POSTS\nFailed to process posts data\n"
         
         return ProfileResponse(**profile_data)
