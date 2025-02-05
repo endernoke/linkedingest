@@ -158,6 +158,7 @@ class LinkedInAgent:
             raw_profile_data = self.get_profile(public_id)
             print("Got profile data.")
         except Exception as e:
+            print(repr(e))
             raise FetchException("profile")
         
         await self._make_noise()
@@ -166,7 +167,9 @@ class LinkedInAgent:
             raw_posts_data = self.get_profile_posts(public_id)
             print("Got posts data.")
         except Exception as e:
-            raise FetchException("posts")
+            print(repr(e))
+            # Posts are not critical, so we can continue without them
+            raw_posts_data = None
         await self._make_noise()
         
         profile_data = {}
