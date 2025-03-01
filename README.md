@@ -1,5 +1,3 @@
-> **NOTE:** Check out the `deploy-render` branch for the most up-to-date version of the project.
-
 <div align="center">
   <a href="https://github.com/endernoke/linkedingest">
     <img src="images/app-preview.png" alt="LinkedIngest Preview" width="800">
@@ -44,7 +42,8 @@ To get a local copy up and running, follow these steps:
 
 ### Prerequisites
 
-* Python
+* python 3
+* pip
 * npm
 * A valid LinkedIn account (don't use your own if possible)
 

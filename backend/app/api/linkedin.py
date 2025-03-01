@@ -1,9 +1,13 @@
 from ..models.profile import ProfileResponse
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
+from linkedin_api.cookie_repository import LinkedinSessionExpired
 import dotenv
 import os
 from datetime import datetime
+import random
+import asyncio
+from typing import Optional, List, Dict, Any
 
 class FetchException(Exception):
     pass
@@ -54,6 +58,10 @@ def format_duration(timePeriod: dict, startPropName: str = "startDate", endPropN
 
 
 class LinkedInAgent:
+    MIN_DELAY = 5  # Minimum delay in seconds
+    MAX_DELAY = 15  # Maximum delay in seconds
+    NOISE_PROBABILITY = 0.3  # 30% chance to make noise requests
+
     def __init__(self):
         # get env variables of linkedin credentials
         dotenv.load_dotenv()
@@ -68,9 +76,37 @@ class LinkedInAgent:
             except ChallengeException as e:
                 self.linkedin = None
                 raise e
+            except Exception as e:
+                self.linkedin = None
+                raise e
         else:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")
+    
+    async def _random_delay(self):
+        """Add random delay between requests"""
+        delay = random.uniform(self.MIN_DELAY, self.MAX_DELAY)
+        await asyncio.sleep(delay)
+
+    async def _make_noise(self) -> None:
+        """
+        Randomly perform noise requests to appear more human-like
+        """
+        if random.random() < self.NOISE_PROBABILITY:
+            noise_funcs = [
+                (self.linkedin.get_current_profile_views, {}),
+                (self.linkedin.get_invitations, {"start": 0, "limit": 3}),
+                (self.linkedin.get_feed_posts, {"limit": 10, "exclude_promoted_posts": True}),
+            ]
+            
+            # Pick 1-2 noise functions randomly
+            selected_funcs = random.sample(noise_funcs, random.randint(1, 2))
+            for func, kwargs in selected_funcs:
+                try:
+                    await self._random_delay()
+                    func(**kwargs)
+                except Exception as e:
+                    print(f"Noise request failed (this is fine): {str(e)}")
     
     def get_profile(self, public_id: str):
         if self.linkedin is None:
@@ -92,18 +128,24 @@ class LinkedInAgent:
     
     async def get_ingest(self, public_id: str) -> ProfileResponse:
         raw_profile_data = None
+        await self._random_delay()
         try:
             raw_profile_data = self.get_profile(public_id)
             print("Got profile data.")
         except Exception as e:
+            print(repr(e))
             raise FetchException("profile")
         
+        await self._make_noise()
         raw_posts_data = None
         try:
             raw_posts_data = self.get_profile_posts(public_id)
             print("Got posts data.")
         except Exception as e:
-            raise FetchException("posts")
+            print(repr(e))
+            # Posts are not critical, so we can continue without them
+            raw_posts_data = None
+        await self._make_noise()
         
         profile_data = {}
         
@@ -288,10 +330,9 @@ class LinkedInAgent:
             print(e)
             raise ParseException(f"Error while processing LinkedIn profile: {str(e)}")
         
-        # TODO: Add posts and recommendations
+        # Posts
+        profile_data["posts"] = ""
         try:
-            # Posts
-            profile_data["posts"] = ""
             if raw_posts_data:
                 profile_data["posts"] = "# POSTS\n"
                 for post in raw_posts_data:
@@ -307,49 +348,64 @@ class LinkedInAgent:
                     orig_author = None
                     orig_author_name = None
                     orig_author_headline = None
+                    orig_company_name = None
                     if post["actor"]["urn"] != raw_profile_data["member_urn"]:
                         post_type = "repost"
-                        orig_author = post["actor"]["image"]["attributes"][0]["miniProfile"]
-                        orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
-                        orig_author_headline = orig_author.get("occupation", None)
+                        if post["actor"]["image"]["attributes"][0].get("miniProfile", False):
+                            orig_author = post["actor"]["image"]["attributes"][0]["miniProfile"]
+                            orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
+                            orig_author_headline = orig_author.get("occupation", None)
+                        elif post["actor"]["image"]["attributes"][0].get("miniCompany", False):
+                            orig_company_name = post["actor"]["image"]["attributes"][0]["miniCompany"].get("name", None)
                     elif post.get("resharedUpdate", False):
                         post_type = "reshare"
-                        orig_content = post["resharedUpdate"]["commentary"]["text"]["text"]
-                        orig_author = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniProfile"]
-                        orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
-                        orig_author_headline = orig_author.get("occupation", None)
+                        try:
+                            orig_content = post["resharedUpdate"]["commentary"]["text"]["text"]
+                        except KeyError:
+                            orig_content = None
+                        if post["resharedUpdate"]["actor"]["image"]["attributes"][0].get("miniProfile", False):
+                            orig_author = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniProfile"]
+                            orig_author_name = orig_author["firstName"] + " " + orig_author["lastName"]
+                            orig_author_headline = orig_author.get("occupation", None)
+                        elif post["resharedUpdate"]["actor"]["image"]["attributes"][0].get("miniCompany", False):
+                            orig_company_name = post["resharedUpdate"]["actor"]["image"]["attributes"][0]["miniCompany"].get("name", None)
                     
                     num_comments = post["socialDetail"]["totalSocialActivityCounts"]["numComments"]
                     num_shares = post["socialDetail"]["totalSocialActivityCounts"]["numShares"]
                     reactions = post["socialDetail"]["totalSocialActivityCounts"]["reactionTypeCounts"]
                     reaction_str = ", ".join([f"{reaction['count']} ({reaction['reactionType']})" for reaction in reactions])
-                    post_content = post["commentary"]["text"]["text"]
+                    post_content = None
+                    try:
+                        post_content = post["commentary"]["text"]["text"]
+                    except KeyError:
+                        post_content = None
                     
+                    attribution_prefix = "COMPANY" if orig_company_name else "AUTHOR"
                     if post_type == "post":
                         profile_data["posts"] += "[Posted]\n"
                     if post_type == "reshare":
                         profile_data["posts"] += "[Reshared a post]\n"
-                        profile_data["posts"] += f"RESHARED FROM:\n- NAME: {orig_author_name}\n"
+                        profile_data["posts"] += f"RESHARED FROM:\n- {attribution_prefix}: {orig_author_name if orig_author_name else orig_company_name}\n"
                         if orig_author_headline:
                             profile_data["posts"] += f"- HEADLINE: {orig_author_headline}\n"
                     if post_type == "repost":
                         profile_data["posts"] += "[Reposted a post]\n"
-                        profile_data["posts"] += f"REPOSTED FROM:\n- NAME: {orig_author_name}\n"
+                        profile_data["posts"] += f"REPOSTED FROM:\n- {attribution_prefix}: {orig_author_name if orig_author_name else orig_company_name}\n"
                         if orig_author_headline:
                             profile_data["posts"] += f"- HEADLINE: {orig_author_headline}\n"
                     profile_data["posts"] += f"REACTIONS: {reaction_str}\n"
                     profile_data["posts"] += f"COMMENTS: {num_comments}\n"
                     profile_data["posts"] += f"SHARES: {num_shares}\n"
-                    if post_type == "reshare":
+                    if post_type == "reshare" and orig_content:
                         profile_data["posts"] += f'ORIGINAL CONTENT:\n"""\n{orig_content}\n"""\n'
                     
-                    content_prefix = "CONTENT:" if post_type == "post" else "ORIGINAL CONTENT:" if post_type == "repost" else "RESHARE COMMENTARY:"
-                    profile_data["posts"] += f'{content_prefix}\n"""\n{post_content}\n"""\n'
+                    if post_content:
+                        content_prefix = "CONTENT:" if post_type == "post" else "ORIGINAL CONTENT:" if post_type == "repost" else "RESHARE COMMENTARY:"
+                        profile_data["posts"] += f'{content_prefix}\n"""\n{post_content}\n"""\n'
                     profile_data["posts"] += "\n"
                 profile_data["posts"] = profile_data["posts"][:-2]
-            
         except Exception as e:
-            print(e)
-            raise ParseException(f"Error while processing LinkedIn posts: {str(e)}")
+            print(f"Failed to process posts: {e}")
+            profile_data["posts"] = "# POSTS\nFailed to process posts data\n"
         
         return ProfileResponse(**profile_data)

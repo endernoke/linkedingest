@@ -46,11 +46,12 @@ function ProfilePage() {
       setLoading(false);
     };
   }, [profileId]);
-
+  
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-linkedin-blue"></div>
+      <div className="flex flex-col justify-center items-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-linkedin-blue mb-4"></div>
+        <p className="text-gray-700">Loading profile of {profileId}... This may take up to a minute to complete.</p>
       </div>
     );
   }

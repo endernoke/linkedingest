@@ -3,8 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .api.linkedin import LinkedInAgent, FetchException, ParseException
-from .models.profile import ProfileResponse
 from .api.linkedin import ChallengeException
+from .models.profile import ProfileResponse
 import os
 
 app = FastAPI()
@@ -44,6 +44,9 @@ try:
     linkedin_agent = LinkedInAgent()
 except ChallengeException as e:
     print("LinkedIn login challenge required, you're screwed 💀")
+    linkedin_agent = None
+except Exception as e:
+    print(f"Failed to initialize LinkedInAgent: {e}")
     linkedin_agent = None
 
 @app.get("/api/profile/{profile_id}", response_model=ProfileResponse)

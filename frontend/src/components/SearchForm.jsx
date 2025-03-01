@@ -18,6 +18,7 @@ function SearchForm() {
       return;
     }
 
+    setUserId('');
     navigate(`/in/${trimmedId}`);
     setError('');
   };
