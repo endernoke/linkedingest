@@ -6,7 +6,7 @@
   <h1 align="center">LinkedIngest</h1>
 
   <p align="center">
-    Transform LinkedIn profiles into prompt-ready data for Large Language Models
+    Turn LinkedIn profiles into prompt-ready data for Large Language Models
     <br />
     <a href="https://linkedingest.onrender.com">View Demo</a>
     ·
@@ -87,15 +87,16 @@ To get a local copy up and running, follow these steps:
 4. Start the application
   - For Mac/Linux:
    ```sh
+   chmod +x ./scripts/start.sh
    ./scripts/start.sh
    ```
   - For Windows:
    ```sh
    cd backend
-   uvicorn app.main:app --host 0.0.0.0 --port 1000
+   uvicorn app.main:app --host 0.0.0.0 --port 10000
    ```
 
-5. The app will be running on `http:// 0.0.0.0:10000`. Navigate to this link in your browser to use the webapp.
+5. The app will be running on `http://localhost:10000`. Navigate to this link in your browser to use the webapp.
 
 ## Usage
 
