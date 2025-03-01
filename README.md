@@ -70,11 +70,18 @@ To get a local copy up and running, follow these steps:
 3. Install dependencies and build
   - For Mac/Linux:
    ```sh
-   ./scripts/build.sh
+   chmod +x ./scripts/setup.sh
+   ./scripts/setup.sh
    ```
   - For Windows:
    ```sh
-   sh ./scripts/build.sh
+   python -m venv venv
+   .\venv\scripts\activate
+   pip install -r backend\requirements.txt
+   cd frontend
+   npm install
+   npm run build
+   cd ..
    ```
 
 4. Start the application
@@ -84,7 +91,8 @@ To get a local copy up and running, follow these steps:
    ```
   - For Windows:
    ```sh
-   sh ./scripts/start.sh
+   cd backend
+   uvicorn app.main:app --host 0.0.0.0 --port 1000
    ```
 
 5. The app will be running on `http:// 0.0.0.0:10000`. Navigate to this link in your browser to use the webapp.
