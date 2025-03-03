@@ -33,7 +33,7 @@ export const config = {
     }
   },
   exampleProfiles: ["jeffweiner08", "gretchenrubin", "neil123", "melindagates", "john-smith-5065b4349"],
-  is_demo: false
+  is_demo: true
 };
 
 export default config;
