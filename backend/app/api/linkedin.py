@@ -8,6 +8,7 @@ from datetime import datetime
 import random
 import asyncio
 from typing import Optional, List, Dict, Any
+import yaml
 
 class FetchException(Exception):
     pass
@@ -58,10 +59,6 @@ def format_duration(timePeriod: dict, startPropName: str = "startDate", endPropN
 
 
 class LinkedInAgent:
-    MIN_DELAY = 5  # Minimum delay in seconds
-    MAX_DELAY = 15  # Maximum delay in seconds
-    NOISE_PROBABILITY = 0.3  # 30% chance to make noise requests
-
     def __init__(self):
         # get env variables of linkedin credentials
         dotenv.load_dotenv()
@@ -82,6 +79,22 @@ class LinkedInAgent:
         else:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")
+
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "../../config.yaml"), "r") as f:
+                config = yaml.safe_load(f)["anti_rate_limiting"]
+                self.DELAY_ON = config["delay"]
+                self.MIN_DELAY = config["min_delay"]
+                self.MAX_DELAY = config["max_delay"]
+                self.NOISE_ON = config["noise"]
+                self.NOISE_PROBABILITY = config["noise_probability"]
+        except Exception as e:
+            print(f"Failed to load config, falling back to default values.\n {repr(e)}")
+            self.DELAY_ON = True
+            self.MIN_DELAY = 5
+            self.MAX_DELAY = 15
+            self.NOISE_ON = True
+            self.NOISE_PROBABILITY = 0.3
     
     async def _random_delay(self):
         """Add random delay between requests"""
@@ -99,8 +112,8 @@ class LinkedInAgent:
                 (self.linkedin.get_feed_posts, {"limit": 10, "exclude_promoted_posts": True}),
             ]
             
-            # Pick 1-2 noise functions randomly
-            selected_funcs = random.sample(noise_funcs, random.randint(1, 2))
+            # Pick a noise functions randomly
+            selected_funcs = random.sample(noise_funcs, 1)
             for func, kwargs in selected_funcs:
                 try:
                     await self._random_delay()
@@ -128,7 +141,8 @@ class LinkedInAgent:
     
     async def get_ingest(self, public_id: str) -> ProfileResponse:
         raw_profile_data = None
-        await self._random_delay()
+        if self.DELAY_ON:
+            await self._random_delay()
         try:
             raw_profile_data = self.get_profile(public_id)
             print("Got profile data.")
@@ -136,7 +150,8 @@ class LinkedInAgent:
             print(repr(e))
             raise FetchException("profile")
         
-        await self._make_noise()
+        if self.NOISE_ON:
+            await self._make_noise()
         raw_posts_data = None
         try:
             raw_posts_data = self.get_profile_posts(public_id)
@@ -145,7 +160,9 @@ class LinkedInAgent:
             print(repr(e))
             # Posts are not critical, so we can continue without them
             raw_posts_data = None
-        await self._make_noise()
+        
+        if self.NOISE_ON:
+            await self._make_noise()
         
         profile_data = {}
         

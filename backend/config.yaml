@@ -1,0 +1,7 @@
+anti_rate_limiting:
+  delay: on  # whether the agent should add a random delay in between requests
+  min_delay: 5  # 5 seconds
+  max_delay: 15  # 15 seconds
+  noise: on  # whether the agent should make random requests to other endpoints
+  noise_probability: 0.3  # 30% chance of making a random request
+  
