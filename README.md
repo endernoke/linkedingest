@@ -38,11 +38,11 @@ The extracted data is formatted in a clean, consistent markdown-like text struct
 
 ## Getting Started
 
-To get a local copy up and running, follow these steps:
+> This section is intended for users familiar with programming. Refer to [LOCALHOST.md](LOCALHOST.md) for an installation guide for non-technical users.
 
 ### Prerequisites
 
-* python 3
+* python 3.12
 * pip
 * npm
 * A valid LinkedIn account (don't use your own if possible)
@@ -70,8 +70,13 @@ To get a local copy up and running, follow these steps:
 3. Install dependencies and build
   - For Mac/Linux:
    ```sh
-   chmod +x ./scripts/setup.sh
-   ./scripts/setup.sh
+   python3 -m venv venv
+   source ./venv/bin/activate
+   pip install -r backend/requirements.txt
+   cd frontend
+   npm install
+   npm run build
+   cd ..
    ```
   - For Windows:
    ```sh
@@ -85,12 +90,6 @@ To get a local copy up and running, follow these steps:
    ```
 
 4. Start the application
-  - For Mac/Linux:
-   ```sh
-   chmod +x ./scripts/start.sh
-   ./scripts/start.sh
-   ```
-  - For Windows:
    ```sh
    cd backend
    uvicorn app.main:app --host 0.0.0.0 --port 10000
