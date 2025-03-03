@@ -28,10 +28,12 @@ export const config = {
     baseUrl: '/api',
     endpoints: {
       health: '/health',
+      queue: '/queue',
       profile: '/profile'
     }
   },
-  exampleProfiles: ["jeffweiner08", "gretchenrubin", "neil123", "melindagates", "sam-altman", "john-smith-5065b4349"]
+  exampleProfiles: ["jeffweiner08", "gretchenrubin", "neil123", "melindagates", "sam-altman", "john-smith-5065b4349"],
+  is_demo: true
 };
 
 export default config;

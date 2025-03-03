@@ -70,6 +70,15 @@ async def health_check():
         )
     return {"status": "ok"}
 
+@app.get("/api/queue")
+async def waiting_count():
+    if linkedin_agent is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="LinkedIn login challenge required."
+        )
+    return linkedin_agent.get_queue_status()
+
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
     # 404 will be handled in frontend
