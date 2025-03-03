@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 import random
 import asyncio
+import threading
 from typing import Optional, List, Dict, Any
 import yaml
 
@@ -95,7 +96,18 @@ class LinkedInAgent:
             self.MAX_DELAY = 15
             self.NOISE_ON = True
             self.NOISE_PROBABILITY = 0.3
+        
+        self._lock = asyncio.Lock()
+        self._waiting_requests_count = 0
+        self._counter_lock = threading.Lock()
     
+    def _set_counter(self, value: int):
+        with self._counter_lock:
+            self._waiting_requests_count = value
+        
+    async def waiting_requests_count(self) -> int:
+        return self._waiting_requests_count
+
     async def _random_delay(self):
         """Add random delay between requests"""
         delay = random.uniform(self.MIN_DELAY, self.MAX_DELAY)
@@ -140,6 +152,21 @@ class LinkedInAgent:
             raise Exception("Failed to get profile posts")
     
     async def get_ingest(self, public_id: str) -> ProfileResponse:
+        """
+        This method is the main entry point for getting a LinkedIn profile.
+        """
+        self._set_counter(self._waiting_requests_count + 1)
+        async with self._lock:
+            try:
+                res = await self._get_ingest(public_id)
+                self._set_counter(self._waiting_requests_count - 1)
+                return res
+            except Exception as e:
+                self._set_counter(self._waiting_requests_count - 1)
+                raise e
+
+    async def _get_ingest(self, public_id: str) -> ProfileResponse:
+        print(f"Started fetching LinkedIn profile for {public_id} (is {self._waiting_requests_count-1}th in queue)")
         raw_profile_data = None
         if self.DELAY_ON:
             await self._random_delay()
