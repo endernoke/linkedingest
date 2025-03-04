@@ -10,6 +10,7 @@ import asyncio
 import threading
 from typing import Optional, List, Dict, Any
 import yaml
+from .get_cookies import download_file_from_google_drive
 
 class FetchException(Exception):
     pass
@@ -70,13 +71,32 @@ class LinkedInAgent:
         
         if credentials["username"] and credentials["password"]:
             try:
-                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True)
+                # Get session cookies
+                cookie_file_id = os.getenv("GDRIVE_COOKIE_FILE_ID")
+                cookie_path = os.path.join(os.path.dirname(__file__), f"{credentials["username"]}.jr")
+                download_file_from_google_drive(cookie_file_id, cookie_path)
+                if not os.path.exists(cookie_path):
+                    raise LinkedinSessionExpired
+                cookie_dir = os.path.dirname(cookie_path)
+                if not cookie_dir.endswith("/"):
+                    cookie_dir += "/"
+                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True, cookies_dir=cookie_dir)
+                print("Authenticated with cookies from Google Drive")
+            except LinkedinSessionExpired:
+                # Authenticate with username and password
+                self.linkedin = Linkedin(credentials["username"], credentials["password"], debug=True, refresh_cookies=True, cookies_dir=cookie_dir)
             except ChallengeException as e:
                 self.linkedin = None
                 raise e
             except Exception as e:
                 self.linkedin = None
                 raise e
+            finally:
+                try:
+                    os.remove(cookie_path)
+                except FileNotFoundError:
+                    pass
+        
         else:
             raise Exception("LinkedIn credentials not provided")
         print("LinkedIn agent initialized")
