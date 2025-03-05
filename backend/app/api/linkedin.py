@@ -4,7 +4,8 @@ from linkedin_api.client import ChallengeException
 from linkedin_api.cookie_repository import LinkedinSessionExpired
 import dotenv
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+import time
 import random
 import asyncio
 import threading
@@ -106,7 +107,7 @@ class LinkedInAgent:
             self._waiting_requests_count = value
         
     def get_queue_status(self) -> dict:
-        # Overestimate the wait time
+        # Overestimate the wait time (in seconds)
         singleWaitTime = 4
         if self.DELAY_ON:
             singleWaitTime += self.MAX_DELAY
@@ -115,7 +116,7 @@ class LinkedInAgent:
 
         return {
             "waiting_requests_count": self._waiting_requests_count,
-            "estimated_completion_timestamp": datetime.isoformat(datetime.now() + timedelta(seconds=(self._waiting_requests_count + 1) * singleWaitTime))
+            "estimated_completion_timestamp": int(time.time()) + (self._waiting_requests_count + 1) * singleWaitTime
         }
 
     async def _random_delay(self):
