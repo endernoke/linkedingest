@@ -1,4 +1,4 @@
-from ..models.profile import ProfileResponse
+from ..models.profile import ProfileResponse, RawData
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
 from linkedin_api.cookie_repository import LinkedinSessionExpired
@@ -238,6 +238,7 @@ class LinkedInAgent:
             await self._make_noise()
         
         profile_data = {}
+        profile_data["raw"] = RawData(profile=raw_profile_data, posts=raw_posts_data)
         
         try:
             profile_data["full_name"] = raw_profile_data["firstName"] + " "

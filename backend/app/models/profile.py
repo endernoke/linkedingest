@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+class RawData(BaseModel):
+    profile: dict
+    posts: list | None = None
+
 class ProfileResponse(BaseModel):
     full_name: str
     summary: str
@@ -13,3 +17,4 @@ class ProfileResponse(BaseModel):
     skills: str
     languages: str
     posts: str
+    raw: RawData

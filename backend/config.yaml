@@ -1,6 +1,6 @@
 cache:
   enabled: true
-  ttl_minutes: 1  # each cache entry expires after 60 minutes
+  ttl_minutes: 60  # each cache entry expires after 60 minutes
 
 anti_rate_limiting:
   delay: on  # whether the agent should add a random delay in between requests
