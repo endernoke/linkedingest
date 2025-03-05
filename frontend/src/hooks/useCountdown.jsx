@@ -3,16 +3,17 @@ import { useState, useEffect } from 'react';
 function useCountdown(targetDate) {
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetDate));
 
-  function calculateTimeLeft(targetDate) {
-    const difference = new Date(targetDate) - new Date();
+  function calculateTimeLeft(targetTime) {
+    const nowTime = new Date().getTime() / 1000;
+    const difference = targetTime - nowTime;
     
     if (difference <= 0) {
       return null;
     }
 
     return {
-      minutes: Math.floor((difference / 1000 / 60) % 60),
-      seconds: Math.floor((difference / 1000) % 60)
+      minutes: Math.floor((difference / 60) % 60),
+      seconds: Math.floor(difference % 60)
     };
   }
 
