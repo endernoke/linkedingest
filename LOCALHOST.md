@@ -20,11 +20,12 @@ You'll also need:
 
 ### 1. Download the Project
 1. Go to [https://github.com/endernoke/linkedingest](https://github.com/endernoke/linkedingest)
-2. Click the green "Code" button and click "Download ZIP"
-3. Extract the ZIP file to a location on your computer
+2. In the [Releases](releases) section, download `source code (zip)` and `distribution-files` under the Assets section for the latest release.
+3. Extract the source code zip file (`linkedingest-x.x.x.zip`) to a location on your computer. 
+4. Extract `distribution-files.zip`. There is a `dist` folder inside. Move `dist` to inside the `linkedingest-x.x.x/frontend` directory inside the extracted source code folder from the previous step.
 
 ### 2. Set Up Configuration
-1. Create a new file called `.env` in the extracted folder
+1. Create a new file called `.env` in the extracted source code folder
 2. Open `.env` with a text editor and add these lines:
    ```
    LINKEDIN_AGENT_USERNAME=your_linkedin_email
@@ -36,9 +37,9 @@ You'll also need:
 ### 3. Install Dependencies
 
 #### For Windows:
-1. Open Command Prompt and navigate to the extracted folder:
+1. Open Command Prompt and navigate to the extracted source code folder:
    ```sh
-   cd path/to/linkedingest
+   cd path/to/linkedingest-x-x-x
    ```
 
 2. Paste these commands into Command Prompt:
@@ -49,9 +50,9 @@ You'll also need:
    ```
 
 #### For Mac/Linux:
-1. Open Terminal and navigate to the extracted folder:
+1. Open Terminal and navigate to the extracted source code folder:
    ```sh
-   cd path/to/linkedingest
+   cd path/to/linkedingest-x-x-x
    ```
 2. Paste these commands into the Terminal:
    ```sh
@@ -61,11 +62,29 @@ You'll also need:
    ```
    If you notice an error similar to "Command 'python' not found", try replacing `python` with `python3` in the above commands and run them again.
 
+After all the above steps, your project directory should look like this:
+```
+linkedingest-x.x.x/
+  |---backend/
+  | |---config.yaml
+  | |--- ...
+  |---frontend/
+  | |---dist/
+  | | |---assets/
+  | | | |--- ...
+  | | |---index.html
+  | | |---favicon.ico
+  |--- ...
+  |---venv/
+  |---LOCALHOST.md
+  |--- ...
+```
+
 ### 4. (Optional) Edit Project Configurations
 
 This project intentionally implemented cooldowns between requests and "noise" requests when interacting with LinkedIn's servers in order to prevent your account from being rate-limited/restricted. For better performance, you might want to tweak the behavior when fetching LinkedIn profiles.
 
-The project's configurations are stored in the file `path/to/linkedingest/backend/config.yaml`. Open this file with your text editor to edit the configurations.
+The project's configurations are stored in the file `backend/config.yaml`. Open this file with your text editor to edit the configurations.
 ```
 anti_rate_limiting:
   delay: off  # Disable delay between requests
@@ -75,7 +94,7 @@ Change these configurations at your own risk.
 
 ### 5. Start the Application
 
-1. Make sure you're in the extracted folder
+1. Make sure you're in the extracted source code folder
 2. Run these commands:
    ```sh
    cd backend
