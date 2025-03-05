@@ -24,10 +24,24 @@ function SearchForm() {
   };
 
   const handleInputChange = (e) => {
-    setUserId(e.target.value);
-    setError(''); // Clear error when user types
+    const input = e.target.value;
+    
+    // Check if input contains a LinkedIn URL
+    if (input.includes('linkedin.com/in/')) {
+      // Extract the ID part after /in/
+      const match = input.match(/linkedin\.com\/in\/([^/?]+)/);
+      if (match && match[1]) {
+        setUserId(match[1].toLowerCase());
+        setError('');
+        return;
+      }
+    }
+    
+    // If not a LinkedIn URL, just set the value as is
+    setUserId(input.toLowerCase());
+    setError('');
   };
-
+  
   return (
     <form onSubmit={handleSubmit} className="mb-8 max-w-2xl mx-auto relative">
       <div className="flex flex-col sm:flex-row gap-4">

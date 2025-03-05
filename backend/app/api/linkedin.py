@@ -1,15 +1,15 @@
-from ..models.profile import ProfileResponse
+from ..models.profile import ProfileResponse, RawData
 from linkedin_api import Linkedin
 from linkedin_api.client import ChallengeException
 from linkedin_api.cookie_repository import LinkedinSessionExpired
 import dotenv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import random
 import asyncio
 import threading
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Tuple
 import yaml
 
 class FetchException(Exception):
@@ -84,14 +84,18 @@ class LinkedInAgent:
 
         try:
             with open(os.path.join(os.path.dirname(__file__), "../../config.yaml"), "r") as f:
-                config = yaml.safe_load(f)["anti_rate_limiting"]
-                self.DELAY_ON = config["delay"]
-                self.MIN_DELAY = config["min_delay"]
-                self.MAX_DELAY = config["max_delay"]
-                self.NOISE_ON = config["noise"]
-                self.NOISE_PROBABILITY = config["noise_probability"]
+                config = yaml.safe_load(f)
+                self.CACHE_ENABLED = config["cache"]["enabled"]
+                self.CACHE_TTL_MINUTES = config["cache"]["ttl_minutes"]
+                self.DELAY_ON = config["anti_rate_limiting"]["delay"]
+                self.MIN_DELAY = config["anti_rate_limiting"]["min_delay"]
+                self.MAX_DELAY = config["anti_rate_limiting"]["max_delay"]
+                self.NOISE_ON = config["anti_rate_limiting"]["noise"]
+                self.NOISE_PROBABILITY = config["anti_rate_limiting"]["noise_probability"]
         except Exception as e:
             print(f"Failed to load config, falling back to default values.\n {repr(e)}")
+            self.CACHE_ENABLED = True
+            self.CACHE_TTL_MINUTES = 60
             self.DELAY_ON = True
             self.MIN_DELAY = 5
             self.MAX_DELAY = 15
@@ -101,6 +105,9 @@ class LinkedInAgent:
         self._lock = asyncio.Lock()
         self._waiting_requests_count = 0
         self._counter_lock = threading.Lock()
+
+        self._cache: Dict[str, CacheEntry] = {}
+        self._cache_lock = threading.Lock()
     
     def _set_counter(self, value: int):
         with self._counter_lock:
@@ -118,6 +125,26 @@ class LinkedInAgent:
             "waiting_requests_count": self._waiting_requests_count,
             "estimated_completion_timestamp": int(time.time()) + (self._waiting_requests_count + 1) * singleWaitTime
         }
+    
+    def _get_from_cache(self, profile_id: str) -> Optional[ProfileResponse]:
+        """Get profile from cache if it exists and is not expired"""
+        with self._cache_lock:
+            if profile_id in self._cache:
+                entry = self._cache[profile_id]
+                if not entry.is_expired():
+                    print(f"Cache hit for profile {profile_id}")
+                    return entry.data
+                else:
+                    # Remove expired entry
+                    print(f"Removing expired cache entry for profile {profile_id}")
+                    del self._cache[profile_id]
+            return None
+
+    def _add_to_cache(self, profile_id: str, data: ProfileResponse):
+        """Add profile data to cache"""
+        with self._cache_lock:
+            self._cache[profile_id] = CacheEntry(data, self.CACHE_TTL_MINUTES)
+            print(f"Added profile {profile_id} to cache")
 
     async def _random_delay(self):
         """Add random delay between requests"""
@@ -166,12 +193,20 @@ class LinkedInAgent:
         """
         This method is the main entry point for getting a LinkedIn profile.
         """
+        # Skip the queue if the data is already in cache because it does not involve LinkedIn API calls
+        if self.CACHE_ENABLED:
+            cached_data = self._get_from_cache(public_id)
+            if cached_data:
+                return cached_data
+
         self._set_counter(self._waiting_requests_count + 1)
         async with self._lock:
             try:
-                res = await self._get_ingest(public_id)
+                profile_response = await self._get_ingest(public_id)
+                if self.CACHE_ENABLED:
+                    self._add_to_cache(public_id, profile_response)
                 self._set_counter(self._waiting_requests_count - 1)
-                return res
+                return profile_response
             except Exception as e:
                 self._set_counter(self._waiting_requests_count - 1)
                 raise e
@@ -203,6 +238,7 @@ class LinkedInAgent:
             await self._make_noise()
         
         profile_data = {}
+        profile_data["raw"] = RawData(profile=raw_profile_data, posts=raw_posts_data)
         
         try:
             profile_data["full_name"] = raw_profile_data["firstName"] + " "
@@ -464,3 +500,12 @@ class LinkedInAgent:
             profile_data["posts"] = "# POSTS\nFailed to process posts data\n"
         
         return ProfileResponse(**profile_data)
+
+class CacheEntry:
+    def __init__(self, data: ProfileResponse, ttl_minutes: int = 60):
+        self.data = data
+        self.created_at = datetime.now()
+        self.expires_at = self.created_at + timedelta(minutes=ttl_minutes)
+
+    def is_expired(self) -> bool:
+        return datetime.now() > self.expires_at
