@@ -1,7 +1,7 @@
 export const config = {
   app: {
     name: (import.meta.env.VITE_APP_NAME) || "LinkedIngest",
-    description: (import.meta.env.VITE_APP_DESCRIPTION) || "Transform LinkedIn profiles into prompt-ready data",
+    description: (import.meta.env.VITE_APP_DESCRIPTION) || "Turn LinkedIn profiles into AI-friendly text ingests",
     baseUrl: "linkedingest.onrender.com",
     github: {
       repo: 'https://github.com/endernoke/linkedingest',

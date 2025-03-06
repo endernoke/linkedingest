@@ -78,7 +78,10 @@ function SearchForm() {
       </div>
       {error && (
         <p className="absolute top-[72px] left-0 text-sm text-red-600">
-          {error}
+          {error}<br />
+          <span>
+            LinkedIn user IDs must be 3-100 characters long, and only consist of lowercase a-z, 0-9, hyphens, and CJK characters.
+          </span>
         </p>
       )}
     </form>

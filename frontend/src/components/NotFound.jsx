@@ -47,7 +47,20 @@ function NotFound({ requestedUserId = '' }) {
           <div className="mt-4 border-t pt-4">
             <p className="text-gray-700">
               I specialize in disappearing from URLs and making developers question their routing logic. <br />
-              If you believe I rejected your connection request by mistake, you could try again. Hopefully you won't get another 404.
+            </p>
+            <p className="text-gray-700 mt-2">
+              Possible reasons why you are seeing this page:
+            </p>
+            <ul className="list-disc list-inside text-gray-700">
+              <li>
+                The user ID is invalid or doesn't exist
+              </li>
+              <li>
+                The profile you're looking for is private
+              </li>
+            </ul>
+            <p className="text-gray-700 mt-2">
+              Please double check the user ID and try again, or reload with the "Connect" button below.
             </p>
           </div>
 
