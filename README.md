@@ -1,8 +1,4 @@
 <div align="center">
-  <a href="https://github.com/endernoke/linkedingest">
-    <img src="images/app-preview.png" alt="LinkedIngest Preview" width="800">
-  </a>
-
   <h1 align="center">LinkedIngest</h1>
 
   <p align="center">
@@ -15,6 +11,10 @@
     <a href="https://github.com/endernoke/linkedingest/issues/new?template=feature_request.md">Request Feature</a>
   </p>
 </div>
+
+
+https://github.com/user-attachments/assets/87f1dab4-c7fa-4b39-8842-94859116fc87
+
 
 ## About The Project
 
@@ -172,6 +172,8 @@ The main API endpoint of LinkedIngest is `/api/profile/<profile-id>`. The respon
   }
 }
 ```
+The absence of a profile section is indicated by an empty string. The `raw.posts` property may be `null` if posts data fail to be fetched.
+
 
 ## Contributing
 
