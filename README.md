@@ -6,7 +6,7 @@
   <h1 align="center">LinkedIngest</h1>
 
   <p align="center">
-    Turn LinkedIn profiles into prompt-ready data for Large Language Models
+    Turn LinkedIn profiles into AI-friendly text ingests.
     <br />
     <a href="https://linkedingest.onrender.com">View Demo</a>
     ·
